@@ -104,9 +104,11 @@
                             <tr>
                                 <th>Requires</th>
                                 <td>
+                                    <ul>
                                     {% for dep in package.highest.requires %}
-                                        {{ dep.target }}: {{ dep.prettyConstraint }}
+                                        <li>{{ dep.target }}: {{ dep.prettyConstraint }}</li>
                                     {% endfor %}
+                                    </ul>
                                 </td>
                             </tr>
                             {% endif %}
@@ -114,9 +116,11 @@
                                 <tr>
                                     <th>Requires Dev</th>
                                     <td>
+                                        <ul>
                                         {% for dep in package.highest.devRequires %}
-                                            {{ dep.target }}: {{ dep.prettyConstraint }}
+                                            <li>{{ dep.target }}: {{ dep.prettyConstraint }}</li>
                                         {% endfor %}
+                                        </ul>
                                     </td>
                                 </tr>
                             {% endif %}
