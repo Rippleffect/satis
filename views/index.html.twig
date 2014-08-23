@@ -32,101 +32,10 @@
     ]
 }</code></pre>
 
-                Filter by package name:
+                <label for="search">Filter by package name:</label>
                 <input type="text" id="search" autocomplete="off" autofocus />
 
-                {% for name, package in packages %}
-                    <div class="package">
-                        <h3 id="{{ package.highest.name }}">{{ package.highest.name }}</h3>
-                        {% if package.highest.description %}
-                            <p>{{ package.highest.description }}</p>
-                        {% endif %}
-                        <table>
-                            {% if package.highest.homepage %}
-                                <tr>
-                                    <th>Homepage</th>
-                                    <td><a href="{{ package.highest.homepage }}">{{ package.highest.homepage }}</a></td>
-                                </tr>
-                            {% endif %}
-                            {% if package.highest.license %}
-                                <tr>
-                                    <th>License</th>
-                                    <td>{{ package.highest.license|join(', ') }}</td>
-                                </tr>
-                            {% endif %}
-                            {% if package.highest.authors %}
-                                <tr>
-                                    <th>Authors</th>
-                                    <td>
-                                        {% for author in package.highest.authors %}
-                                            {%- if author.homepage -%}
-                                                <a href="{{ author.homepage }}">{{ author.name }}</a>
-                                            {%- else -%}
-                                                {{ author.name }}
-                                            {%- endif -%}
-                                            {%- if not loop.last -%}, {% endif -%}
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                            {% endif %}
-                            {% if package.highest.support %}
-                            <tr>
-                                <th>Support</th>
-                                <td>
-                                    <ul>
-                                    {% for support_type, support_url in package.highest.support %}
-                                        <li>{{ support_type|capitalize }}: <a href="{{ support_url }}">{{ support_url }}</a></li>
-                                    {% endfor %}
-                                    </ul>
-                                </tr>
-                            </td>
-                            {% endif %}
-                            <tr>
-                                <th>Releases</th>
-                                <td>
-                                    {% for version in package.versions %}
-                                        {%- if version.distType -%}
-                                            <a href="{{ version.distUrl }}" title="{{ version.distReference }}">{{ version.prettyVersion }}</a>
-                                        {%- else -%}
-                                            <a href="{{ version.sourceUrl }}" title="{{ version.sourceReference }}">{{ version.prettyVersion }}</a>
-                                        {%- endif -%}
-                                        {%- if not loop.last -%}, {% endif -%}
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Keywords</th>
-                                <td class="package-keywords">
-                                    {{ package.highest.keywords|join(', ') }}
-                                </td>
-                            </tr>
-                            {% if package.highest.requires is not empty %}
-                            <tr>
-                                <th>Requires</th>
-                                <td>
-                                    <ul>
-                                    {% for dep in package.highest.requires %}
-                                        <li>{{ dep.target }}: {{ dep.prettyConstraint }}</li>
-                                    {% endfor %}
-                                    </ul>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            {% if package.highest.devRequires is not empty %}
-                                <tr>
-                                    <th>Requires Dev</th>
-                                    <td>
-                                        <ul>
-                                        {% for dep in package.highest.devRequires %}
-                                            <li>{{ dep.target }}: {{ dep.prettyConstraint }}</li>
-                                        {% endfor %}
-                                        </ul>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        </table>
-                    </div>
-                {% endfor %}
+                <div id="packages">Loading packages ...</div>
             </div>
         </div>
         <div id="ft">
@@ -134,48 +43,231 @@
         </div>
     </div>
 
+    <script id="packageTemplate" type="text/template">
+        <div class="package">
+            <h3 id="<%= highest.get('name') %>"><%= highest.get('name') %></h3>
+            <p><%= highest.get('description') %></p>
+            <table>
+                <% if (typeof highest.homepage !== 'undefined') { %>
+                <tr>
+                    <th>Homepage</th>
+                    <td><a href="<%= highest.get('homepage') %>"><%= highest.get('homepage') %></a></td>
+                </tr>
+                <% } %>
+                <% if (typeof highest.get('license') !== 'undefined') { %>
+                <tr>
+                    <th>License</th>
+                    <td><%= highest.get('license') %></td>
+                </tr>
+                <% } %>
+                <% if (typeof highest.get('authors') !== 'undefined') { %>
+                <tr>
+                    <th>Authors</th>
+                    <td>
+                        <% _.each(highest.get('authors'), function (author) { %>
+                        <% if (typeof author.email !== 'undefined') { %>
+                        <a href="mailto:<%= author.email %>"><%= author.name %></a>
+                        <% } else { %>
+                        <%= author.name %></a>
+                        <% } %>
+                        <% }); %>
+                    </td>
+                </tr>
+                <% } %>
+                <% if (typeof highest.get('support') !== 'undefined') { %>
+                <tr>
+                    <th>Support</th>
+                    <td>
+                        <ul>
+                            <% $.each(highest.get('support'), function (supportType, supportUrl) { %>
+                            <li><%= supportType.capitalize() %>: <a href="<%= supportUrl %>"><%= supportUrl %></a></li>
+                            <% }); %>
+                        </ul>
+                    </td>
+                </tr>
+                <% } %>
+                <tr>
+                    <th>Releases</th>
+                    <td>
+                        <% _.each(releases.toJSON(), function (version) { %>
+                            <a href="<%= version.source.url %>" title="<%= version.source.reference %>"><%= version.version %></a>
+                        <% }); %>
+                    </td>
+                </tr>
+                <% if (typeof highest.get('keywords') !== 'undefined') { %>
+                <tr>
+                    <th>Keywords</th>
+                    <td class="package-keywords">
+                        <%= highest.get('keywords').join(', ') %>
+                    </td>
+                </tr>
+                <% } %>
+                <% if (typeof highest.get('require') !== 'undefined') { %>
+                <tr>
+                    <th>Requires</th>
+                    <td>
+                        <ul>
+                            <% $.each(highest.get('require'), function (name, reference) { %>
+                            <li><%= name %>: <%= reference %></li>
+                            <% }); %>
+                        </ul>
+                    </td>
+                </tr>
+                <% } %>
+                <% if (typeof highest.get('requireDev') !== 'undefined') { %>
+                <tr>
+                    <th>Requires</th>
+                    <td>
+                        <ul>
+                            <% $.each(highest.get('requireDev'), function (name, reference) { %>
+                            <li><%= name %>: <%= reference %></li>
+                            <% }); %>
+                        </ul>
+                    </td>
+                </tr>
+                <% } %>
+            </table>
+        </div>
+    </script>
+
     <script>
-    {% include 'jquery-2.0.0.js' %}
-    {% include 'moment-2.4.0.js' %}
-    $(function(){
-        var packages = $('div.package');
-        var timer;
-        $('input#search').keyup(function(){
-            clearTimeout(timer);
-            var ms = 350; // milliseconds
-            var needle = $(this).val().toLowerCase(), show;
-            timer = setTimeout(function() {
-                packages.each(function(){
-                    show = $(this).find('h3').text().toLowerCase().indexOf(needle) != -1;
-                    show = show || $(this).find('td.package-keywords').text().toLowerCase().indexOf(needle) != -1;
-                    $(this).toggle(show);
-                });
-            }, ms);
-        }).focus();
-        $('input#search').change(function(){
-            window.location.hash = "!/" + $(this).val().toLowerCase();
+        {% include 'jquery-2.0.0.js' %}
+        {% include 'underscore.js' %}
+        {% include 'backbone.js' %}
+        {% include 'version_compare.js' %}
+        {% include 'moment-2.4.0.js' %}
+        {% include 'string-capitalize.js' %}
+
+        var Release = Backbone.Model.extend({});
+
+        var PackageReleases = Backbone.Collection.extend({
+            model: Release
         });
-        $(window).on("hashchange", function() {
-            var $input = $('input#search');
-            if (window.location.hash.indexOf("#!/") == 0) {
-                $input.val(window.location.hash.replace(/#!\//,"").toLowerCase());
-                $input.trigger("keyup");
-            } else {
-                var $anchor = $("h3[id='"+window.location.hash.replace(/^#/,"")+"']");
-                if ($anchor.length != $anchor.filter(":visible").length) {
-                    $input.val("").trigger("keyup");
-                    $anchor.get(0).scrollIntoView();
-                }
+
+        var Package = Backbone.Model.extend({
+            releases: new PackageReleases(),
+            parse: function (response) {
+                var releases = [],
+                    highestRelease;
+
+                $.each(response.releases, function (releaseName, releaseData) {
+                    var release = new Release(releaseData);
+                    releases.push(release);
+
+                    if (typeof highestRelease === 'undefined' || version_compare(release.version, highestRelease.version, '>=')) {
+                        highestRelease = release;
+                    }
+                });
+
+                return {
+                    name: response.name,
+                    releases: new PackageReleases(releases),
+                    highest: highestRelease
+                };
             }
         });
-        $(window).trigger("hashchange");
-        var $lastUpdate = $('#lastupdate time');
+
+        var PackageList = Backbone.Collection.extend({
+            model: Package,
+            url: '{{ includes|keys|first }}',
+            parse: function (response) {
+                var packageList = [];
+
+                $.each(response.packages, function (name, releases) {
+                    packageList.push({
+                        name: name,
+                        releases: releases
+                    });
+                });
+
+                return packageList;
+            }
+        });
+
+        var PackagesView = Backbone.View.extend({
+            tagName: 'ul',
+            render: function () {
+                this.$el.empty();
+
+                this.collection.each(function (currentPackage) {
+                    var packageView = new PackageView({model: currentPackage});
+                    this.$el.append(packageView.render().el);
+                }, this);
+
+                return this;
+            }
+        });
+
+        var PackageView = Backbone.View.extend({
+            tagName: 'li',
+            template: _.template($('#packageTemplate').html()),
+            render: function () {
+                this.$el.html(this.template(this.model.toJSON()));
+
+                return this;
+            }
+        });
+
+        var packages = new PackageList();
+        packages.fetch({reset: true});
+
+        packages.on('reset', function () {
+            packagesView.render();
+        });
+
+        var packagesView = new PackagesView({ collection: packages });
+        $('#packages').replaceWith(packagesView.render().el);
+
+        var LastUpdateView = Backbone.View.extend({
+            tagName: 'time',
+            render: function () {
+                this.$el.text(moment('{{ "now"|date(constant('\DateTime::ISO8601')) }}').fromNow());
+
+                return this;
+            }
+        });
+
+        var lastUpdateView = new LastUpdateView();
+        $('#lastupdate time').replaceWith(lastUpdateView.render().el);
         function updateDate() {
-            $lastUpdate.text(moment('{{ "now"|date(constant('\DateTime::ISO8601')) }}').fromNow());
+            lastUpdateView.render();
         }
-        setInterval(updateDate, 5000);
-        updateDate();
-    });
+        setInterval(updateDate, 30000);
+
+        {#{% include 'jquery-2.0.0.js' %}#}
+        {#$(function(){#}
+            {#var packages = $('div.package');#}
+            {#var timer;#}
+            {#$('input#search').keyup(function(){#}
+                {#clearTimeout(timer);#}
+                {#var ms = 350; // milliseconds#}
+                {#var needle = $(this).val().toLowerCase(), show;#}
+                {#timer = setTimeout(function() {#}
+                    {#packages.each(function(){#}
+                        {#show = $(this).find('h3').text().toLowerCase().indexOf(needle) != -1;#}
+                        {#show = show || $(this).find('td.package-keywords').text().toLowerCase().indexOf(needle) != -1;#}
+                        {#$(this).toggle(show);#}
+                    {#});#}
+                {#}, ms);#}
+            {#}).focus();#}
+            {#$('input#search').change(function(){#}
+                {#window.location.hash = "!/" + $(this).val().toLowerCase();#}
+            {#});#}
+            {#$(window).on("hashchange", function() {#}
+                {#var $input = $('input#search');#}
+                {#if (window.location.hash.indexOf("#!/") == 0) {#}
+                    {#$input.val(window.location.hash.replace(/#!\//,"").toLowerCase());#}
+                    {#$input.trigger("keyup");#}
+                {#} else {#}
+                    {#var $anchor = $("h3[id='"+window.location.hash.replace(/^#/,"")+"']");#}
+                    {#if ($anchor.length != $anchor.filter(":visible").length) {#}
+                        {#$input.val("").trigger("keyup");#}
+                        {#$anchor.get(0).scrollIntoView();#}
+                    {#}#}
+                {#}#}
+            {#});#}
+            {#$(window).trigger("hashchange");#}
+        {#});#}
     </script>
 </body>
 </html>
