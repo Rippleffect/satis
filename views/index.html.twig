@@ -169,7 +169,7 @@
 
         var PackageList = Backbone.Collection.extend({
             model: Package,
-            url: '{{ includes|keys|first }}',
+            url: '{{ includes|keys|first|escape('js') }}',
             parse: function (response) {
                 var packageList = [];
 
